@@ -137,7 +137,7 @@ export default function Navbar() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex flex-col items-center gap-2 p-3 rounded-xl corner-superellipse/1.125 bg-green-a2 hover:bg-green-a3/70 transition-colors"
                   >
-                    <span className="w-9 h-9 rounded-full corner-superellipse/1.125 bg-green-4 flex items-center justify-center">
+                    <span className="w-10 h-10 rounded-full corner-superellipse/1.125 bg-green-4 flex items-center justify-center">
                       <svg width="18" height="18" fill="none" viewBox="0 0 16 16" className="text-white">
                         <path
                           d="M8 4.5V3.72222M8 11.5V12.2778M9.68428 5.66667C9.34812 5.20171 8.71976 4.88889 8 4.88889H7.78393C6.82937 4.88889 6.05556 5.50795 6.05556 6.27161V6.33097C6.05556 6.8772 6.44132 7.37653 7.05204 7.62083L8.94796 8.37917C9.55867 8.62347 9.94444 9.1228 9.94444 9.66903C9.94444 10.4655 9.13742 11.1111 8.14187 11.1111H8C7.28024 11.1111 6.65188 10.7983 6.31569 10.3333M15 8C15 11.866 11.866 15 8 15C4.13401 15 1 11.866 1 8C1 4.13401 4.13401 1 8 1C11.866 1 15 4.13401 15 8Z"
@@ -161,7 +161,7 @@ export default function Navbar() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex flex-col items-center gap-2 p-3 rounded-xl corner-superellipse/1.125 bg-purple-a2 hover:bg-purple-a3/70 transition-colors"
                   >
-                    <span className="w-9 h-9 rounded-full corner-superellipse/1.125 bg-purple-4 flex items-center justify-center">
+                    <span className="w-10 h-10 rounded-full corner-superellipse/1.125 bg-purple-4 flex items-center justify-center">
                       <svg width="18" height="18" fill="none" viewBox="0 0 16 16" className="text-white">
                         <path
                           d="M8 15C11.866 15 15 11.866 15 8C15 4.13401 11.866 1 8 1M8 15C4.13401 15 1 11.866 1 8C1 4.13401 4.13401 1 8 1M8 15C6.22373 15 4.78378 11.866 4.78378 8C4.78378 4.13401 6.22373 1 8 1M8 15C9.77626 15 11.2162 11.866 11.2162 8C11.2162 4.13401 9.77626 1 8 1M14.8108 8H1.18919"
@@ -184,7 +184,7 @@ export default function Navbar() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex flex-col items-center gap-2 p-3 rounded-xl corner-superellipse/1.125 bg-amber-a2 hover:bg-amber-a3/70 transition-colors"
                   >
-                    <span className="w-9 h-9 rounded-full corner-superellipse/1.125 bg-amber-4 flex items-center justify-center">
+                    <span className="w-10 h-10 rounded-full corner-superellipse/1.125 bg-amber-4 flex items-center justify-center">
                       <svg width="18" height="18" fill="none" viewBox="0 0 16 16" className="text-white">
                         <path
                           d="M10.2703 6.48649L8.19668 10.4609M14.0541 10.8378H1.94595M12.9497 3.05026C10.2161 0.316581 5.78393 0.316581 3.05026 3.05026C0.316581 5.78391 0.316581 10.2161 3.05026 12.9497C5.78391 15.6834 10.2161 15.6834 12.9497 12.9497C15.6834 10.2161 15.6834 5.78393 12.9497 3.05026Z"
@@ -208,7 +208,7 @@ export default function Navbar() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex flex-col items-center gap-2 p-3 rounded-xl corner-superellipse/1.125 bg-pink-a2 hover:bg-pink-a3/70 transition-colors"
                   >
-                    <span className="w-9 h-9 rounded-full corner-superellipse/1.125 bg-pink-4 flex items-center justify-center">
+                    <span className="w-10 h-10 rounded-full corner-superellipse/1.125 bg-pink-4 flex items-center justify-center">
                       <svg width="18" height="18" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
                         <path
                           d="M8 15c3.866 0 7-3.134 7-7S11.866 1 8 1 1 4.134 1 8s3.134 7 7 7Z"
