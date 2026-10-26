@@ -55,7 +55,20 @@ export default function Footer() {
               </svg>
             </a>
           </div>
-          <p className="text-sm text-fg-2 font-medium">© 2026 Befroosh. All rights reserved.</p>
+          <div className="flex flex-col gap-1 text-sm text-fg-2 font-medium">
+            <p>© 2026 Befroosh. All rights reserved.</p>
+            <p className="text-xs text-fg-a3">
+              Created by{" "}
+              <a
+                href="https://parsanaderi-dev.vercel.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-fg-4 hover:underline underline-offset-4 font-medium transition-colors"
+              >
+                parsanaderi
+              </a>
+            </p>
+          </div>
         </div>
         <div className="flex-1 grid grid-cols-2 gap-x-8 gap-y-8 md:gap-x-12">
           <div className="flex flex-1 flex-col gap-1 max-w-32">

@@ -54,10 +54,10 @@ export default function Hero() {
         <Link
           href="#features"
           prefetch={false}
-          className="inline-flex items-center gap-2 pl-2.5 pr-2.5 py-1.5 rounded-full bg-sky-a1 text-sm font-medium text-sky-4 hover:bg-sky-a2/70 transition-colors"
+          className="inline-flex max-w-[calc(100vw-40px)] sm:max-w-full items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-full bg-sky-a1 text-xs sm:text-sm font-medium text-sky-4 hover:bg-sky-a2/70 transition-colors"
         >
           <svg
-            className="h-3.5 w-auto select-none shrink-0"
+            className="h-3 sm:h-3.5 w-auto select-none shrink-0"
             fill="none"
             viewBox="0 0 288 191"
             xmlns="http://www.w3.org/2000/svg"
@@ -104,7 +104,7 @@ export default function Hero() {
           </svg>
           <span
             ref={shimmerRef}
-            className="relative inline-block"
+            className="relative inline-block truncate"
             style={{
               maskImage: "linear-gradient(90deg, black 40%, transparent 50%, black 60%)",
               WebkitMaskImage: "linear-gradient(90deg, black 40%, transparent 50%, black 60%)",
@@ -115,14 +115,15 @@ export default function Hero() {
               animation: "shimmer-mask 2.5s infinite linear",
             }}
           >
-            Built with Official Instagram API (Meta Verified)
+            <span className="hidden sm:inline">Built with Official Instagram API (Meta Verified)</span>
+            <span className="inline sm:hidden">Official Instagram API • Meta Verified</span>
           </span>
           <svg
             width="16"
             height="16"
             fill="none"
             viewBox="0 0 16 16"
-            className="-ml-1"
+            className="-ml-1 shrink-0"
           >
             <path
               d="M6 12L10 8L6 4"
