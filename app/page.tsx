@@ -1,0 +1,27 @@
+import Navbar from "@/components/Navbar";
+import Hero from "@/components/Hero";
+import Features from "@/components/Features";
+import HowItWorks from "@/components/HowItWorks";
+import Comparison from "@/components/Comparison";
+import Pricing from "@/components/Pricing";
+import FAQ from "@/components/FAQ";
+import CTA from "@/components/CTA";
+import Footer from "@/components/Footer";
+
+export default function Home() {
+  return (
+    <div className="flex flex-col flex-1">
+      <Navbar />
+      <div className="flex flex-col flex-1">
+        <Hero />
+        <Features />
+        <HowItWorks />
+        <Comparison />
+        <Pricing />
+        <FAQ />
+        <CTA />
+      </div>
+      <Footer />
+    </div>
+  );
+}
