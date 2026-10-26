@@ -1,8 +1,6 @@
-<div align="center">
+# Befroosh
 
-# Befroosh (بفروش)
-
-**The All-in-One Instagram Sales & Smart DM Automation Platform**
+**The All-in-One Instagram Sales & Direct Commerce Automation Platform**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](./LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-16.4-black?style=flat-square&logo=next.js)](https://nextjs.org/)
@@ -10,92 +8,80 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38bdf8?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
 [![Meta Partner](https://img.shields.io/badge/Meta-Approved%20Partner-0081fb?style=flat-square&logo=meta)](https://meta.com)
 
-[**Live Demo / Portfolio**](https://parsanaderi-dev.vercel.app) • [**Report Bug**](https://github.com/parsanaderidev/befroosh/issues) • [**Request Feature**](https://github.com/parsanaderidev/befroosh/issues)
-
-</div>
+[Live Site](https://befrooosh.vercel.app) &bull; [GitHub Repository](https://github.com/parsanaderidev/befroosh) &bull; [Issue Tracker](https://github.com/parsanaderidev/befroosh/issues)
 
 ---
 
-## 📌 Overview
+## Overview
 
-**Befroosh** is a modern, high-conversion web application designed for Instagram creators, influencers, and e-commerce stores. Built on top of official Meta & Instagram Graph APIs, it transforms standard direct messages and comments into automated sales funnels, lead generation pipelines, and in-chat storefronts without requiring external websites or account passwords.
-
----
-
-## ✨ Key Features
-
-### ⚡ Smart DM & Comment Automation
-- **Instant Keyword Triggers**: Automatically dispatch tailored direct messages when followers leave specific keywords on posts, reels, or stories.
-- **100% Response Rate Engine**: Eliminate manual response latency with sub-second message dispatch and customer routing.
-- **Story Mention Handling**: Capture user stories tagging your brand and initiate warm follow-up sequences.
-
-### 🛍️ In-Chat Storefront
-- **Direct Catalog Showcase**: Display product cards, galleries, pricing, and variants straight inside Instagram Direct.
-- **Frictionless Checkout**: Collect delivery addresses, customer phone numbers, and payment receipts without forcing customers off Instagram.
-
-### 🛡️ Official Meta Partner Integration
-- **Zero Risk Architecture**: Authenticates strictly via official Instagram Graph APIs.
-- **No Password Required**: Never requests or stores Instagram passwords, ensuring 100% account safety and Meta compliance.
-
-### 📊 Real-Time Analytics & Funnels
-- **Conversion Tracking**: Monitor click-through rates, message open rates, customer lead captures, and revenue attribution.
-- **Customer Directory**: Centralized contact directory with interaction histories and follower metrics.
-
-### 🌟 Social Proof Marquee
-- Features live customer integration showcases highlighting top creators and digital storefronts using Befroosh.
+Befroosh is a high-performance web platform built for digital creators, brands, and e-commerce merchants operating on Instagram. By leveraging official Meta Graph and Instagram Messaging APIs, Befroosh bridges the gap between social engagement and sales conversion—turning comments, story mentions, and direct messages into automated revenue pipelines without requiring external websites or exposing account credentials.
 
 ---
 
-## 🛠️ Tech Stack
+## Core Capabilities
 
-| Technology | Purpose |
-| :--- | :--- |
-| **[Next.js 16](https://nextjs.org/)** | React Framework with App Router, Turbopack, and SSR |
-| **[TypeScript](https://www.typescriptlang.org/)** | Static typing and robust code contracts |
-| **[Tailwind CSS](https://tailwindcss.com/)** | Utility-first CSS framework with curated dark/light tokens |
-| **[Bun](https://bun.sh/)** | Ultra-fast JavaScript runtime and package manager |
-| **Custom Vector Graphics** | Pixel-perfect SVGs and official brand assets for Meta and Instagram |
+### Direct Message & Comment Automation
+- **Keyword Triggers**: Automatically deliver contextual replies and product links when followers comment target keywords on posts, reels, or livestreams.
+- **High-Availability Response Engine**: Sub-second automated message dispatch ensuring zero lead drop-off and consistent response rates.
+- **Story Mention Handling**: Capture user stories tagging your brand and initiate immediate relationship-building flows.
+
+### In-Chat Storefront & Checkout
+- **Native Product Catalogs**: Present interactive product cards, galleries, pricing tiers, and inventory variants directly inside Instagram Direct.
+- **Frictionless Lead Capture**: Collect verified phone numbers, shipping details, and transaction receipts within the conversation.
+
+### Security & Official Meta Compliance
+- **Direct API Integration**: Operates exclusively through verified Meta and Instagram Graph API endpoints.
+- **Credential Safety**: Never requests, collects, or stores Instagram account passwords, maintaining strict compliance with Meta platform terms.
+
+### Revenue Analytics & Attribution
+- **Funnel Visualization**: Monitor real-time click-through rates, conversation completion metrics, and revenue generated per post or reel.
+- **Audience Directory**: Unified customer contact management with full engagement histories and purchasing behavior.
 
 ---
 
-## 🚀 Getting Started
+## Technical Stack
+
+| Layer | Technology | Details |
+| :--- | :--- | :--- |
+| **Framework** | Next.js 16 (App Router) | Server-side rendering, streaming, Turbopack tooling |
+| **Language** | TypeScript 5.x | Strict type contracts and interface consistency |
+| **Styling** | Tailwind CSS v4 | Curated dark/light design tokens and fluid typography |
+| **Runtime & Package Manager** | Bun | High-speed package resolution and development server |
+| **Assets** | Optimized Vector Graphics | Official Meta, Instagram, and platform brand assets |
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
-- **[Bun](https://bun.sh/)** (recommended) or **[Node.js](https://nodejs.org/)** (`v18.17.0` or higher)
+Ensure you have one of the following installed:
+- **[Bun](https://bun.sh/)** (recommended runtime)
+- **[Node.js](https://nodejs.org/)** (v18.17.0 or higher)
 
-### 1. Clone the Repository
+### Installation
 
-```bash
-git clone https://github.com/parsanaderidev/befroosh.git
-cd befroosh
-```
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/parsanaderidev/befroosh.git
+   cd befroosh
+   ```
 
-### 2. Install Dependencies
+2. Install dependencies:
+   ```bash
+   bun install
+   # or: npm install
+   ```
 
-Using Bun:
-```bash
-bun install
-```
+3. Launch the development server:
+   ```bash
+   bun dev
+   # or: npm run dev
+   ```
 
-Using npm / pnpm:
-```bash
-npm install
-# or
-pnpm install
-```
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 3. Run Development Server
-
-```bash
-bun dev
-# or
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser to explore the live application with instant hot module reloading.
-
-### 4. Build for Production
+### Production Build
 
 ```bash
 bun run build
@@ -104,40 +90,41 @@ bun run start
 
 ---
 
-## 📂 Project Structure
+## Repository Structure
 
 ```text
 befroosh/
-├── app/                  # Next.js App Router (pages, layout, globals.css)
+├── app/                  # Next.js App Router (pages, layout, styling)
 │   ├── globals.css       # Core design tokens, gradients, animations
-│   ├── layout.tsx        # Root layout with font and metadata configurations
-│   └── page.tsx          # Main landing page assembling hero, features, comparison
+│   ├── layout.tsx        # Root HTML shell, fonts, and metadata
+│   └── page.tsx          # Landing page composition
 ├── components/           # Reusable UI component modules
-│   ├── Navbar.tsx        # Responsive navigation with category menus
-│   ├── Hero.tsx          # Dynamic hero section with Meta badge & Instagram headline
-│   ├── CustomerMarquee.tsx # Infinite-scroll creator marquee with gradient masks
-│   ├── Features.tsx      # Feature card grid showcasing Befroosh capabilities
-│   ├── Comparison.tsx    # Comparison tables vs. traditional chatbots & manual DMs
-│   ├── HowItWorks.tsx    # Step-by-step 3-stage onboarding workflow
-│   ├── Pricing.tsx       # Interactive tier slider based on audience size
-│   ├── FAQ.tsx           # Accordion FAQ addressing common sales questions
-│   ├── CTA.tsx           # Conversion-focused bottom banner
-│   └── Footer.tsx        # Site footer with creator attribution & social channels
-├── data/                 # Structured JSON data (customers, plans, FAQs)
-├── public/               # Static assets, fonts, brand logos, customer avatars
-└── LICENSE               # MIT Open Source License
+│   ├── Navbar.tsx        # Responsive navigation with mobile drawer and backdrop
+│   ├── Hero.tsx          # Hero section with Meta Partner badge and headline
+│   ├── CustomerMarquee.tsx # Infinite-scroll client marquee with gradient masks
+│   ├── Features.tsx      # Core capability grid
+│   ├── Comparison.tsx    # Benchmark comparisons vs traditional chatbots
+│   ├── HowItWorks.tsx    # Three-step setup workflow
+│   ├── Pricing.tsx       # Dynamic plan selector based on audience size
+│   ├── FAQ.tsx           # Accordion frequently asked questions
+│   ├── CTA.tsx           # Primary conversion callout banner
+│   └── Footer.tsx        # Footer with author attribution and links
+├── data/                 # Static content and structured JSON resources
+├── public/               # Static assets, fonts, customer avatars, logos
+├── LICENSE               # MIT License
+└── README.md             # Project documentation
 ```
 
 ---
 
-## 📄 License
+## License
 
-Distributed under the **MIT License**. See [`LICENSE`](./LICENSE) for more information.
+This project is licensed under the **MIT License**. See the [LICENSE](./LICENSE) file for complete details.
 
 ---
 
-## 👨‍💻 Creator & Attribution
+## Author & Attribution
 
-Crafted with care by **Parsa Naderi**  
-🌐 **Portfolio**: [parsanaderi-dev.vercel.app](https://parsanaderi-dev.vercel.app)  
-🐙 **GitHub**: [@parsanaderidev](https://github.com/parsanaderidev)
+Developed by **Parsa Naderi**  
+- Portfolio: [parsanaderi-dev.vercel.app](https://parsanaderi-dev.vercel.app)  
+- GitHub: [@parsanaderidev](https://github.com/parsanaderidev)
