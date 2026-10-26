@@ -20,7 +20,7 @@ export default function Navbar() {
 
       {/* Mobile Header */}
       <header
-        className={`dark fixed top-4 left-4 right-4 z-50 md:hidden bg-background/95 backdrop-blur-xl border border-bg-a2/80 rounded-[24px] shadow-lg corner-superellipse/1.125 transition-all duration-300 ease-in-out ${
+        className={`dark fixed top-4 left-4 right-4 z-50 md:hidden bg-background backdrop-blur-lg rounded-[24px] shadow-xs corner-superellipse/1.125 transition-all duration-300 ease-in-out ${
           mobileMenuOpen
             ? "max-h-[calc(100dvh-2rem)] overflow-y-auto"
             : "max-h-[52px] h-[52px] overflow-hidden"
@@ -291,7 +291,7 @@ export default function Navbar() {
 
       {/* Desktop Header */}
       <header
-        className="dark fixed top-8 left-1/2 -translate-x-1/2 z-50 w-[530px] bg-background/95 backdrop-blur-xl border border-bg-a2/80 rounded-[24px] overflow-hidden shadow-xs corner-superellipse/1.125 hidden md:block transition-[height] duration-300 ease-in-out"
+        className="dark fixed top-8 left-1/2 -translate-x-1/2 z-50 w-[530px] bg-background backdrop-blur-lg rounded-[24px] overflow-hidden shadow-xs corner-superellipse/1.125 hidden md:block transition-[height] duration-300 ease-in-out"
         style={{ height: desktopFeaturesOpen ? "308px" : "52px" }}
       >
         <div>
