@@ -561,7 +561,7 @@ export default function Navbar({ interactionStyle = "liquid-glass" }: NavbarProp
         }}
       >
         <div>
-          <div className="flex items-center gap-5 h-13 pl-4 pr-3.5">
+          <div className="flex items-center gap-5 h-13 pl-4 pr-3">
             <Link
               className="active flex items-center shrink-0"
               href="/"
@@ -723,8 +723,8 @@ export default function Navbar({ interactionStyle = "liquid-glass" }: NavbarProp
             <Link prefetch={false} href="/register">
               <button
                 data-slot="button"
-                style={{ height: "34px" }}
-                className="select-none flex items-center relative cursor-pointer justify-center whitespace-nowrap font-medium transition-all bg-purple-4 text-white enabled:hover:opacity-90 px-3.5 text-sm rounded-full active:scale-95 shadow-xs shrink-0"
+                style={{ height: "36px" }}
+                className="select-none flex items-center relative cursor-pointer justify-center whitespace-nowrap font-medium transition-all bg-purple-4 text-white enabled:hover:opacity-90 px-3.5 text-sm rounded-xl active:scale-95 shadow-xs shrink-0"
               >
                 Start Free
               </button>
