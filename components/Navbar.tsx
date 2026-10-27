@@ -1,11 +1,269 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 
-export default function Navbar() {
+export type NavbarInteractionStyle = "standard" | "liquid-glass";
+
+export interface NavbarProps {
+  interactionStyle?: NavbarInteractionStyle;
+}
+
+type EligibleNavId = "features" | "pricing" | "faq" | "login";
+
+const ELIGIBLE_ORDER: EligibleNavId[] = [
+  "features",
+  "pricing",
+  "faq",
+  "login",
+];
+
+interface Spring {
+  x: number;
+  v: number;
+  target: number;
+  settled: boolean;
+  to: (newTarget: number) => void;
+  set: (val: number) => void;
+  step: (dt: number) => boolean;
+}
+
+function createSpring(initial: number, tension = 260, friction = 20, mass = 1): Spring {
+  let x = initial;
+  let v = 0;
+  let target = initial;
+  let settled = true;
+
+  return {
+    get x() {
+      return x;
+    },
+    get v() {
+      return v;
+    },
+    get target() {
+      return target;
+    },
+    get settled() {
+      return settled;
+    },
+    to(newTarget: number) {
+      target = newTarget;
+      settled = false;
+    },
+    set(val: number) {
+      x = val;
+      target = val;
+      v = 0;
+      settled = true;
+    },
+    step(dt: number) {
+      if (settled) return true;
+      const clampedDt = Math.min(dt, 0.032);
+      const subSteps = 2;
+      const subDt = clampedDt / subSteps;
+      for (let i = 0; i < subSteps; i++) {
+        const force = -tension * (x - target) - friction * v;
+        const a = force / mass;
+        v += a * subDt;
+        x += v * subDt;
+      }
+
+      if (Math.abs(v) < 0.1 && Math.abs(x - target) < 0.1) {
+        x = target;
+        v = 0;
+        settled = true;
+        return true;
+      }
+      return false;
+    },
+  };
+}
+
+export default function Navbar({ interactionStyle = "liquid-glass" }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [desktopFeaturesOpen, setDesktopFeaturesOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("features");
+  const [hoveredTab, setHoveredTab] = useState<EligibleNavId | null>(null);
+
+  const navContainerRef = useRef<HTMLElement | null>(null);
+  const blobRef = useRef<HTMLDivElement | null>(null);
+  const itemRefs = useRef<Record<EligibleNavId, HTMLElement | null>>({
+    features: null,
+    pricing: null,
+    faq: null,
+    login: null,
+  });
+
+  const springsRef = useRef<{ L: Spring; R: Spring }>({
+    L: createSpring(0),
+    R: createSpring(0),
+  });
+
+  const fromIdRef = useRef<EligibleNavId>("features");
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const lastTimeRef = useRef<number | null>(null);
+  const [isIndicatorReady, setIsIndicatorReady] = useState(false);
+
+  const runLoop = useCallback((time: number) => {
+    if (lastTimeRef.current === null) {
+      lastTimeRef.current = time;
+    }
+    const dt = (time - lastTimeRef.current) / 1000;
+    lastTimeRef.current = time;
+
+    const { L, R } = springsRef.current;
+    const settledL = L.step(dt);
+    const settledR = R.step(dt);
+
+    if (blobRef.current) {
+      const width = Math.max(34, R.x - L.x);
+      blobRef.current.style.transform = `translateX(${L.x}px)`;
+      blobRef.current.style.width = `${width}px`;
+    }
+
+    if (!settledL || !settledR) {
+      rafRef.current = requestAnimationFrame(runLoop);
+    } else {
+      rafRef.current = null;
+      lastTimeRef.current = null;
+    }
+  }, []);
+
+  const startLoop = useCallback(() => {
+    if (!rafRef.current) {
+      lastTimeRef.current = null;
+      rafRef.current = requestAnimationFrame(runLoop);
+    }
+  }, [runLoop]);
+
+  const moveToTab = useCallback(
+    (targetId: EligibleNavId, immediate = false) => {
+      const targetEl = itemRefs.current[targetId];
+      if (!targetEl || !navContainerRef.current) return;
+
+      const targetLeft = targetEl.offsetLeft;
+      const targetRight = targetLeft + targetEl.offsetWidth;
+
+      const fromId = fromIdRef.current;
+      const fromIndex = ELIGIBLE_ORDER.indexOf(fromId);
+      const toIndex = ELIGIBLE_ORDER.indexOf(targetId);
+
+      if (fromId === targetId && !immediate) return;
+
+      fromIdRef.current = targetId;
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+
+      const prefersReduced =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      if (immediate || prefersReduced || fromIndex === -1) {
+        springsRef.current.L.set(targetLeft);
+        springsRef.current.R.set(targetRight);
+        if (blobRef.current) {
+          const width = Math.max(34, targetRight - targetLeft);
+          blobRef.current.style.transform = `translateX(${targetLeft}px)`;
+          blobRef.current.style.width = `${width}px`;
+        }
+        return;
+      }
+
+      if (toIndex > fromIndex) {
+        // Moving right: right edge stretches first, left edge follows after 90ms
+        springsRef.current.R.to(targetRight);
+        startLoop();
+        timeoutRef.current = setTimeout(() => {
+          springsRef.current.L.to(targetLeft);
+          startLoop();
+        }, 90);
+      } else {
+        // Moving left: left edge stretches back first, right edge follows after 90ms
+        springsRef.current.L.to(targetLeft);
+        startLoop();
+        timeoutRef.current = setTimeout(() => {
+          springsRef.current.R.to(targetRight);
+          startLoop();
+        }, 90);
+      }
+    },
+    [startLoop]
+  );
+
+  const handleTabMouseEnter = useCallback(
+    (id: EligibleNavId) => {
+      if (interactionStyle !== "liquid-glass") return;
+      setHoveredTab(id);
+      moveToTab(id);
+    },
+    [interactionStyle, moveToTab]
+  );
+
+  const handleNavMouseLeave = useCallback(() => {
+    if (interactionStyle !== "liquid-glass") return;
+    setHoveredTab(null);
+    if (ELIGIBLE_ORDER.includes(activeTab as EligibleNavId)) {
+      moveToTab(activeTab as EligibleNavId);
+    }
+  }, [interactionStyle, activeTab, moveToTab]);
+
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const syncHash = () => {
+      const hash = window.location.hash.toLowerCase();
+      if (hash === "#pricing") setActiveTab("pricing");
+      else if (hash === "#faq") setActiveTab("faq");
+      else if (hash === "#features") setActiveTab("features");
+    };
+
+    syncHash();
+    window.addEventListener("hashchange", syncHash);
+    return () => window.removeEventListener("hashchange", syncHash);
+  }, []);
+
+  useEffect(() => {
+    if (interactionStyle !== "liquid-glass") return;
+
+    if (ELIGIBLE_ORDER.includes(activeTab as EligibleNavId)) {
+      const isInitial = !isIndicatorReady;
+      moveToTab(activeTab as EligibleNavId, isInitial);
+      if (isInitial) {
+        setIsIndicatorReady(true);
+      }
+    }
+  }, [activeTab, interactionStyle, isIndicatorReady, moveToTab]);
+
+  useEffect(() => {
+    if (interactionStyle !== "liquid-glass") return;
+
+    const handleResize = () => {
+      const current = hoveredTab || (activeTab as EligibleNavId);
+      if (ELIGIBLE_ORDER.includes(current)) {
+        moveToTab(current, true);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [interactionStyle, activeTab, hoveredTab, moveToTab]);
 
   return (
     <>
@@ -20,11 +278,10 @@ export default function Navbar() {
 
       {/* Mobile Header */}
       <header
-        className={`dark fixed top-4 left-4 right-4 z-50 md:hidden bg-background backdrop-blur-lg rounded-[24px] shadow-xs corner-superellipse/1.125 transition-all duration-300 ease-in-out ${
-          mobileMenuOpen
-            ? "max-h-[calc(100dvh-2rem)] overflow-y-auto"
-            : "max-h-[52px] h-[52px] overflow-hidden"
-        }`}
+        className={`dark fixed top-4 left-4 right-4 z-50 md:hidden bg-background backdrop-blur-lg rounded-xl shadow-xs transition-all duration-300 ease-in-out ${mobileMenuOpen
+          ? "max-h-[calc(100dvh-2rem)] overflow-y-auto"
+          : "max-h-[52px] h-[52px] overflow-hidden"
+          }`}
       >
         <div>
           <div className="flex items-center justify-between h-13 pl-4 pr-3.25">
@@ -241,25 +498,30 @@ export default function Navbar() {
               {/* Navigation Links */}
               <div className="flex flex-col gap-0.5 px-1 pt-2 border-t border-bg-a2">
                 <Link
-                  className="px-3 py-2 text-sm font-medium text-fg-3 hover:text-fg-4 hover:bg-bg-a1 rounded-lg transition-colors"
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === "pricing"
+                    ? "text-fg-4 bg-bg-a2 font-semibold"
+                    : "text-fg-3 hover:text-fg-4 hover:bg-bg-a1"
+                    }`}
                   href="/#pricing"
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={() => {
+                    setActiveTab("pricing");
+                    setMobileMenuOpen(false);
+                  }}
                 >
                   Pricing
                 </Link>
+
                 <Link
                   prefetch={false}
-                  href="/blog"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-3 py-2 text-sm font-medium text-fg-3 hover:text-fg-4 hover:bg-bg-a1 rounded-lg transition-colors"
-                >
-                  Customers
-                </Link>
-                <Link
-                  prefetch={false}
-                  href="/docs"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-3 py-2 text-sm font-medium text-fg-3 hover:text-fg-4 hover:bg-bg-a1 rounded-lg transition-colors"
+                  href="/#faq"
+                  onClick={() => {
+                    setActiveTab("faq");
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === "faq"
+                    ? "text-fg-4 bg-bg-a2 font-semibold"
+                    : "text-fg-3 hover:text-fg-4 hover:bg-bg-a1"
+                    }`}
                 >
                   FAQ
                 </Link>
@@ -291,12 +553,26 @@ export default function Navbar() {
 
       {/* Desktop Header */}
       <header
-        className="dark fixed top-8 left-1/2 -translate-x-1/2 z-50 w-[530px] bg-background backdrop-blur-lg rounded-[24px] overflow-hidden shadow-xs corner-superellipse/1.125 hidden md:block transition-[height] duration-300 ease-in-out"
-        style={{ height: desktopFeaturesOpen ? "308px" : "52px" }}
+        className="dark fixed top-8 left-1/2 -translate-x-1/2 z-50 bg-background backdrop-blur-lg rounded-[24px] overflow-hidden shadow-xs corner-superellipse/1.125 hidden md:block transition-[height] duration-300 ease-in-out"
+        style={{
+          width: "498px",
+          height: desktopFeaturesOpen ? "308px" : "52px",
+          backgroundColor: "#14141f",
+        }}
       >
         <div>
-          <div className="flex items-center gap-2 h-13 pl-4 pr-3.25">
-            <Link className="active" href="/" data-status="active" aria-current="page">
+          <div className="flex items-center gap-5 h-13 pl-4 pr-3.5">
+            <Link
+              className="active flex items-center shrink-0"
+              href="/"
+              data-status="active"
+              aria-current="page"
+              onClick={() => {
+                setActiveTab("features");
+                setDesktopFeaturesOpen(false);
+                moveToTab("features");
+              }}
+            >
               <svg
                 height="32"
                 viewBox="0 0 32 32"
@@ -310,11 +586,51 @@ export default function Navbar() {
                 />
               </svg>
             </Link>
-            <nav className="flex items-center text-sm flex-1">
+
+            <nav
+              ref={navContainerRef}
+              style={{ height: "34px" }}
+              className="relative flex items-center flex-1 justify-between"
+              onMouseLeave={handleNavMouseLeave}
+            >
+              {/* Liquid Glass moving indicator (Features through Login only) */}
+              {interactionStyle === "liquid-glass" && (
+                <div
+                  ref={blobRef}
+                  aria-hidden="true"
+                  className="pointer-events-none absolute z-0 top-0 left-0 rounded-full border border-white/[0.14] transition-opacity duration-150"
+                  style={{
+                    height: "34px",
+                    background:
+                      "linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%)",
+                    boxShadow:
+                      "0 4px 14px -2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.22)",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                    opacity: isIndicatorReady ? 1 : 0,
+                    willChange: "transform, width",
+                  }}
+                />
+              )}
+
               <button
+                ref={(el) => {
+                  itemRefs.current["features"] = el;
+                }}
                 type="button"
-                className="flex items-center gap-0.5 px-2 py-1 text-sm font-medium transition-colors text-fg-3 hover:text-fg-4 cursor-pointer"
-                onClick={() => setDesktopFeaturesOpen(!desktopFeaturesOpen)}
+                style={{ height: "34px" }}
+                className={`relative z-10 flex items-center justify-center gap-1 px-3 text-sm font-medium rounded-full transition-colors cursor-pointer ${(hoveredTab ? hoveredTab === "features" : (desktopFeaturesOpen || activeTab === "features"))
+                    ? interactionStyle === "standard"
+                      ? "bg-bg-a2 text-fg-4 font-semibold shadow-2xs"
+                      : "text-white font-semibold drop-shadow-xs"
+                    : "text-fg-3 hover:text-white"
+                  }`}
+                onMouseEnter={() => handleTabMouseEnter("features")}
+                onClick={() => {
+                  setActiveTab("features");
+                  setDesktopFeaturesOpen(!desktopFeaturesOpen);
+                  moveToTab("features");
+                }}
               >
                 Features
                 <span
@@ -323,7 +639,7 @@ export default function Navbar() {
                     transition: "transform 0.2s ease-out",
                   }}
                 >
-                  <svg width="14" height="14" fill="none" viewBox="0 0 16 16">
+                  <svg width="12" height="12" fill="none" viewBox="0 0 16 16">
                     <path
                       d="M4 6L8 10L12 6"
                       stroke="currentColor"
@@ -334,40 +650,81 @@ export default function Navbar() {
                   </svg>
                 </span>
               </button>
+
               <Link
-                className="px-2 py-1 text-sm font-medium transition-colors text-fg-3 hover:text-fg-4 active"
-                data-status="active"
-                aria-current="page"
+                ref={(el) => {
+                  itemRefs.current["pricing"] = el;
+                }}
+                style={{ height: "34px" }}
+                className={`relative z-10 flex items-center justify-center px-3 text-sm font-medium rounded-full transition-colors cursor-pointer ${(hoveredTab ? hoveredTab === "pricing" : activeTab === "pricing")
+                    ? interactionStyle === "standard"
+                      ? "bg-bg-a2 text-fg-4 font-semibold shadow-2xs"
+                      : "text-white font-semibold drop-shadow-xs"
+                    : "text-fg-3 hover:text-white"
+                  }`}
                 href="/#pricing"
-                onClick={() => setDesktopFeaturesOpen(false)}
+                onMouseEnter={() => handleTabMouseEnter("pricing")}
+                onClick={() => {
+                  setActiveTab("pricing");
+                  setDesktopFeaturesOpen(false);
+                  moveToTab("pricing");
+                }}
               >
                 Pricing
               </Link>
-              <Link prefetch={false}
-                className="px-2 py-1 text-sm font-medium transition-colors text-fg-3 hover:text-fg-4"
-                href="/blog"
-                onClick={() => setDesktopFeaturesOpen(false)}
-              >
-                Customers
-              </Link>
-              <Link prefetch={false}
-                className="px-2 py-1 text-sm font-medium transition-colors text-fg-3 hover:text-fg-4"
-                href="/docs"
-                onClick={() => setDesktopFeaturesOpen(false)}
+
+              <Link
+                ref={(el) => {
+                  itemRefs.current["faq"] = el;
+                }}
+                prefetch={false}
+                style={{ height: "34px" }}
+                className={`relative z-10 flex items-center justify-center px-3 text-sm font-medium rounded-full transition-colors cursor-pointer ${(hoveredTab ? hoveredTab === "faq" : activeTab === "faq")
+                    ? interactionStyle === "standard"
+                      ? "bg-bg-a2 text-fg-4 font-semibold shadow-2xs"
+                      : "text-white font-semibold drop-shadow-xs"
+                    : "text-fg-3 hover:text-white"
+                  }`}
+                href="/#faq"
+                onMouseEnter={() => handleTabMouseEnter("faq")}
+                onClick={() => {
+                  setActiveTab("faq");
+                  setDesktopFeaturesOpen(false);
+                  moveToTab("faq");
+                }}
               >
                 FAQ
               </Link>
+
+              <Link
+                ref={(el) => {
+                  itemRefs.current["login"] = el;
+                }}
+                prefetch={false}
+                style={{ height: "34px" }}
+                className={`relative z-10 flex items-center justify-center px-3 text-sm font-medium rounded-full transition-colors cursor-pointer ${(hoveredTab ? hoveredTab === "login" : activeTab === "login")
+                    ? interactionStyle === "standard"
+                      ? "bg-bg-a2 text-fg-4 font-semibold shadow-2xs"
+                      : "text-white font-semibold drop-shadow-xs"
+                    : "text-fg-3 hover:text-white"
+                  }`}
+                href="/login"
+                onMouseEnter={() => handleTabMouseEnter("login")}
+                onClick={() => {
+                  setActiveTab("login");
+                  setDesktopFeaturesOpen(false);
+                  moveToTab("login");
+                }}
+              >
+                Login
+              </Link>
             </nav>
-            <Link prefetch={false}
-              className="text-sm font-medium transition-colors px-2 text-fg-3 hover:text-fg-4"
-              href="/login"
-            >
-              Login
-            </Link>
+
             <Link prefetch={false} href="/register">
               <button
                 data-slot="button"
-                className="select-none flex items-center relative cursor-pointer justify-center whitespace-nowrap font-medium [&:disabled]:cursor-not-allowed transition-all [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 [&:disabled_svg]:opacity-30 focus-visible:ring-2 focus-visible:ring-purple-2 focus-visible:ring-offset-4 focus-visible:ring-offset-background focus-visible:outline-none aria-invalid:focus-visible:ring-0 corner-superellipse/1.125 bg-purple-4 text-white enabled:hover:opacity-90 disabled:bg-purple-2 disabled:text-white dark:disabled:bg-bg-3 dark:disabled:text-white h-[32px] px-2.5 text-sm rounded-full gap-2 active:scale-99 data-[pressed]:scale-99"
+                style={{ height: "34px" }}
+                className="select-none flex items-center relative cursor-pointer justify-center whitespace-nowrap font-medium transition-all bg-purple-4 text-white enabled:hover:opacity-90 px-3.5 text-sm rounded-full active:scale-95 shadow-xs shrink-0"
               >
                 Start Free
               </button>

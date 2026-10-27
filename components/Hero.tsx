@@ -57,7 +57,7 @@ export default function Hero() {
           className="inline-flex max-w-[calc(100vw-40px)] sm:max-w-full items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-full bg-sky-a1 text-xs sm:text-sm font-medium text-sky-4 hover:bg-sky-a2/70 transition-colors"
         >
           <svg
-            className="h-3 sm:h-3.5 w-auto select-none shrink-0"
+            className="h-4 sm:h-4 w-auto select-none shrink-0"
             fill="none"
             viewBox="0 0 288 191"
             xmlns="http://www.w3.org/2000/svg"
@@ -191,14 +191,14 @@ export default function Hero() {
       >
         <div className="absolute top-0 left-1/2 -translate-x-1/2 h-13 bg-background flex items-center md:items-start px-5 rounded-b-4xl">
           <div
-            className="absolute top-0 -left-[31px] w-8 h-8"
+            className="absolute top-0 -left-[31px] w-10 h-8"
             style={{
               background:
                 "radial-gradient(circle at 0% 100%, transparent 32px, var(--color-background) 32.5px)",
             }}
           />
           <div
-            className="absolute top-0 -right-[31px] w-8 h-8"
+            className="absolute top-0 -right-[31px] w-10 h-8"
             style={{
               background:
                 "radial-gradient(circle at 100% 100%, transparent 32px, var(--color-background) 32.5px)",

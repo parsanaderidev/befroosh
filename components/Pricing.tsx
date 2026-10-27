@@ -427,7 +427,8 @@ export default function Pricing() {
                   alt="Simulated realtime globe"
                   width={640}
                   height={640}
-                  priority
+                  loading="lazy"
+                  decoding="async"
                   className="w-[640px] h-[640px] object-contain drop-shadow-sm select-none"
                 />
               </div>

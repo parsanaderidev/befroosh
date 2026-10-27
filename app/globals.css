@@ -80,6 +80,15 @@
   animation-play-state: paused;
 }
 
+::selection {
+  background-color: var(--purple-4, #9580ff);
+  color: #ffffff;
+}
+
+::-moz-selection {
+  background-color: var(--purple-4, #9580ff);
+  color: #ffffff;
+}
 
 :root {
   /* Colors */

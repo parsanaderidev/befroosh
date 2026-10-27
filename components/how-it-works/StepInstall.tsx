@@ -17,8 +17,9 @@ export default function StepInstall() {
               alt="Official Instagram Logo"
               width={84}
               height={84}
+              loading="lazy"
+              decoding="async"
               className="w-18 h-18 md:w-20 md:h-20 select-none object-contain drop-shadow-lg"
-              priority
             />
           </div>
           <canvas
