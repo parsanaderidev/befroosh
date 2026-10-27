@@ -102,6 +102,7 @@ export default function Navbar({ interactionStyle = "liquid-glass" }: NavbarProp
 
   const fromIdRef = useRef<EligibleNavId>("features");
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const leaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rafRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
   const [isIndicatorReady, setIsIndicatorReady] = useState(false);
@@ -118,8 +119,10 @@ export default function Navbar({ interactionStyle = "liquid-glass" }: NavbarProp
     const settledR = R.step(dt);
 
     if (blobRef.current) {
-      const width = Math.max(34, R.x - L.x);
-      blobRef.current.style.transform = `translateX(${L.x}px)`;
+      const minX = Math.min(L.x, R.x);
+      const maxX = Math.max(L.x, R.x);
+      const width = Math.max(34, maxX - minX);
+      blobRef.current.style.transform = `translateX(${minX}px)`;
       blobRef.current.style.width = `${width}px`;
     }
 
@@ -175,21 +178,23 @@ export default function Navbar({ interactionStyle = "liquid-glass" }: NavbarProp
       }
 
       if (toIndex > fromIndex) {
-        // Moving right: right edge stretches first, left edge follows after 90ms
+        // Moving right: right edge stretches first, left edge follows after 80ms
         springsRef.current.R.to(targetRight);
         startLoop();
         timeoutRef.current = setTimeout(() => {
           springsRef.current.L.to(targetLeft);
           startLoop();
-        }, 90);
+          timeoutRef.current = null;
+        }, 80);
       } else {
-        // Moving left: left edge stretches back first, right edge follows after 90ms
+        // Moving left: left edge stretches back first, right edge follows after 80ms
         springsRef.current.L.to(targetLeft);
         startLoop();
         timeoutRef.current = setTimeout(() => {
           springsRef.current.R.to(targetRight);
           startLoop();
-        }, 90);
+          timeoutRef.current = null;
+        }, 80);
       }
     },
     [startLoop]
@@ -198,6 +203,10 @@ export default function Navbar({ interactionStyle = "liquid-glass" }: NavbarProp
   const handleTabMouseEnter = useCallback(
     (id: EligibleNavId) => {
       if (interactionStyle !== "liquid-glass") return;
+      if (leaveTimeoutRef.current) {
+        clearTimeout(leaveTimeoutRef.current);
+        leaveTimeoutRef.current = null;
+      }
       setHoveredTab(id);
       moveToTab(id);
     },
@@ -206,12 +215,14 @@ export default function Navbar({ interactionStyle = "liquid-glass" }: NavbarProp
 
   const handleNavMouseLeave = useCallback(() => {
     if (interactionStyle !== "liquid-glass") return;
-    setHoveredTab(null);
-    if (ELIGIBLE_ORDER.includes(activeTab as EligibleNavId)) {
-      moveToTab(activeTab as EligibleNavId);
-    }
+    if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current);
+    leaveTimeoutRef.current = setTimeout(() => {
+      setHoveredTab(null);
+      if (ELIGIBLE_ORDER.includes(activeTab as EligibleNavId)) {
+        moveToTab(activeTab as EligibleNavId);
+      }
+    }, 70);
   }, [interactionStyle, activeTab, moveToTab]);
-
 
   useEffect(() => {
     return () => {
@@ -220,6 +231,9 @@ export default function Navbar({ interactionStyle = "liquid-glass" }: NavbarProp
       }
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
+      }
+      if (leaveTimeoutRef.current) {
+        clearTimeout(leaveTimeoutRef.current);
       }
     };
   }, []);
@@ -589,24 +603,24 @@ export default function Navbar({ interactionStyle = "liquid-glass" }: NavbarProp
 
             <nav
               ref={navContainerRef}
-              style={{ height: "34px" }}
-              className="relative flex items-center flex-1 justify-between"
+              className="relative flex items-center h-13 flex-1 justify-between"
               onMouseLeave={handleNavMouseLeave}
             >
-              {/* Liquid Glass moving indicator (Features through Login only) */}
+              {/* Liquid Glass moving indicator (Features through Login) */}
               {interactionStyle === "liquid-glass" && (
                 <div
                   ref={blobRef}
                   aria-hidden="true"
-                  className="pointer-events-none absolute z-0 top-0 left-0 rounded-full border border-white/[0.14] transition-opacity duration-150"
+                  className="pointer-events-none absolute z-0 top-[9px] left-0 rounded-xl transition-opacity duration-150"
                   style={{
                     height: "34px",
+                    border: "1px solid rgba(255, 255, 255, 0.15)",
                     background:
-                      "linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%)",
+                      "linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(204, 207, 255, 0.05) 100%)",
                     boxShadow:
-                      "0 4px 14px -2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.22)",
-                    backdropFilter: "blur(12px)",
-                    WebkitBackdropFilter: "blur(12px)",
+                      "0 2px 8px -1px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.32), inset 0 -1px 0 rgba(0, 0, 0, 0.2)",
+                    backdropFilter: "blur(14px) saturate(150%)",
+                    WebkitBackdropFilter: "blur(14px) saturate(150%)",
                     opacity: isIndicatorReady ? 1 : 0,
                     willChange: "transform, width",
                   }}
@@ -620,10 +634,10 @@ export default function Navbar({ interactionStyle = "liquid-glass" }: NavbarProp
                 type="button"
                 style={{ height: "34px" }}
                 className={`relative z-10 flex items-center justify-center gap-1 px-3 text-sm font-medium rounded-full transition-colors cursor-pointer ${(hoveredTab ? hoveredTab === "features" : (desktopFeaturesOpen || activeTab === "features"))
-                    ? interactionStyle === "standard"
-                      ? "bg-bg-a2 text-fg-4 font-semibold shadow-2xs"
-                      : "text-white font-semibold drop-shadow-xs"
-                    : "text-fg-3 hover:text-white"
+                  ? interactionStyle === "standard"
+                    ? "bg-bg-a2 text-fg-4 font-semibold shadow-2xs"
+                    : "text-white font-medium drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]"
+                  : "text-fg-3 hover:text-white"
                   }`}
                 onMouseEnter={() => handleTabMouseEnter("features")}
                 onClick={() => {
@@ -657,10 +671,10 @@ export default function Navbar({ interactionStyle = "liquid-glass" }: NavbarProp
                 }}
                 style={{ height: "34px" }}
                 className={`relative z-10 flex items-center justify-center px-3 text-sm font-medium rounded-full transition-colors cursor-pointer ${(hoveredTab ? hoveredTab === "pricing" : activeTab === "pricing")
-                    ? interactionStyle === "standard"
-                      ? "bg-bg-a2 text-fg-4 font-semibold shadow-2xs"
-                      : "text-white font-semibold drop-shadow-xs"
-                    : "text-fg-3 hover:text-white"
+                  ? interactionStyle === "standard"
+                    ? "bg-bg-a2 text-fg-4 font-semibold shadow-2xs"
+                    : "text-white font-medium drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]"
+                  : "text-fg-3 hover:text-white"
                   }`}
                 href="/#pricing"
                 onMouseEnter={() => handleTabMouseEnter("pricing")}
@@ -680,10 +694,10 @@ export default function Navbar({ interactionStyle = "liquid-glass" }: NavbarProp
                 prefetch={false}
                 style={{ height: "34px" }}
                 className={`relative z-10 flex items-center justify-center px-3 text-sm font-medium rounded-full transition-colors cursor-pointer ${(hoveredTab ? hoveredTab === "faq" : activeTab === "faq")
-                    ? interactionStyle === "standard"
-                      ? "bg-bg-a2 text-fg-4 font-semibold shadow-2xs"
-                      : "text-white font-semibold drop-shadow-xs"
-                    : "text-fg-3 hover:text-white"
+                  ? interactionStyle === "standard"
+                    ? "bg-bg-a2 text-fg-4 font-semibold shadow-2xs"
+                    : "text-white font-medium drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]"
+                  : "text-fg-3 hover:text-white"
                   }`}
                 href="/#faq"
                 onMouseEnter={() => handleTabMouseEnter("faq")}
@@ -703,10 +717,10 @@ export default function Navbar({ interactionStyle = "liquid-glass" }: NavbarProp
                 prefetch={false}
                 style={{ height: "34px" }}
                 className={`relative z-10 flex items-center justify-center px-3 text-sm font-medium rounded-full transition-colors cursor-pointer ${(hoveredTab ? hoveredTab === "login" : activeTab === "login")
-                    ? interactionStyle === "standard"
-                      ? "bg-bg-a2 text-fg-4 font-semibold shadow-2xs"
-                      : "text-white font-semibold drop-shadow-xs"
-                    : "text-fg-3 hover:text-white"
+                  ? interactionStyle === "standard"
+                    ? "bg-bg-a2 text-fg-4 font-semibold shadow-2xs"
+                    : "text-white font-medium drop-shadow-[0_1px_3px_rgba(0,0,0,0.6)]"
+                  : "text-fg-3 hover:text-white"
                   }`}
                 href="/login"
                 onMouseEnter={() => handleTabMouseEnter("login")}

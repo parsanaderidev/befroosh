@@ -1,11 +1,89 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 
 export default function PerformanceCard() {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [progress, setProgress] = useState(0); // 0 to 1
+  const animRef = useRef<number | null>(null);
+  const hasAnimatedRef = useRef(false);
+
+  const startAnimation = useCallback(() => {
+    if (animRef.current) cancelAnimationFrame(animRef.current);
+    const duration = 1800; // 1.8s smooth cinematic fill
+    let startTime: number | null = null;
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const t = Math.min(1, elapsed / duration);
+      // easeOutQuart: silky smooth start with graceful deceleration
+      const eased = 1 - Math.pow(1 - t, 4);
+      setProgress(eased);
+
+      if (t < 1) {
+        animRef.current = requestAnimationFrame(animate);
+      } else {
+        animRef.current = null;
+      }
+    };
+
+    animRef.current = requestAnimationFrame(animate);
+  }, []);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !hasAnimatedRef.current) {
+            hasAnimatedRef.current = true;
+            setTimeout(() => {
+              startAnimation();
+            }, 150);
+          }
+        });
+      },
+      { threshold: 0.15 }
+    );
+
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+  }, [startAnimation]);
+
+  const circumference = 366.94;
+  const currentVal = Math.round(progress * 100);
+  const strokeOffset = circumference * (1 - progress);
+
+
+  const numberColor =
+    currentVal < 50
+      ? "text-red-4"
+      : currentVal < 90
+      ? "text-amber-4"
+      : "text-green-4";
+
+  const dotColor =
+    currentVal < 50
+      ? "bg-red-4"
+      : currentVal < 90
+      ? "bg-amber-4"
+      : "bg-green-4";
+
   return (
-        <div className="flex flex-col bg-bg-a1 rounded-xl min-h-[280px] overflow-hidden relative">
+        <div
+          ref={cardRef}
+          onMouseEnter={() => {
+            if (!animRef.current) startAnimation();
+          }}
+          className="flex flex-col bg-bg-a1 rounded-xl min-h-[280px] overflow-hidden relative group/card"
+        >
           <canvas
             className="absolute inset-0 w-full h-full pointer-events-none z-10"
             style={{
@@ -129,9 +207,36 @@ export default function PerformanceCard() {
           </div>
           <div className="w-full h-[320px] p-6 px-8 pt-0 flex flex-col gap-4 items-center justify-center">
             <div className="flex-1 flex flex-col gap-4 items-center justify-center">
-              <div className="relative flex items-center justify-center">
+              <div
+                className="relative flex items-center justify-center cursor-pointer group"
+                onClick={startAnimation}
+                title="Click to replay animation"
+              >
                 <div className="flex items-center justify-center relative">
-                  <svg height="128" width="128" className="select-none">
+                  <svg height="128" width="128" className="select-none overflow-visible">
+                    <defs>
+                      {/* Red gradient for 0-49 */}
+                      <linearGradient id="performanceRedGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#dc2626" />
+                        <stop offset="50%" stopColor="#ff2f00" />
+                        <stop offset="100%" stopColor="#ff6b4a" />
+                      </linearGradient>
+
+                      {/* Orange gradient for 50-89 */}
+                      <linearGradient id="performanceOrangeGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#ea580c" />
+                        <stop offset="50%" stopColor="#ffa600" />
+                        <stop offset="100%" stopColor="#fbbf24" />
+                      </linearGradient>
+
+                      {/* Green gradient for 90-100 */}
+                      <linearGradient id="performanceGreenGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#16a34a" />
+                        <stop offset="50%" stopColor="#22c55e" />
+                        <stop offset="100%" stopColor="#4ade80" />
+                      </linearGradient>
+                    </defs>
+
                     {/* Background track ring */}
                     <circle
                       cx="64"
@@ -142,47 +247,117 @@ export default function PerformanceCard() {
                       className="text-bg-3/60 dark:text-bg-3/40"
                       strokeWidth="11.2"
                     />
-                    {/* Active filled green ring */}
+
+                    {/* Active Red ring (0-49) */}
                     <circle
                       cx="64"
                       cy="64"
                       r="58.4"
                       fill="none"
-                      stroke="currentColor"
-                      className="text-green-4 transition-all duration-700 ease-out"
+                      stroke="url(#performanceRedGrad)"
                       strokeWidth="11.2"
                       strokeDasharray="366.94"
-                      strokeDashoffset="0"
+                      strokeDashoffset={strokeOffset.toFixed(2)}
                       strokeLinecap="round"
                       transform="rotate(-90 64 64)"
+                      className="transition-opacity duration-300"
+                      style={{
+                        opacity: currentVal < 50 ? 1 : 0,
+                        willChange: "stroke-dashoffset, opacity",
+                      }}
+                    />
+
+                    {/* Active Orange ring (50-89) */}
+                    <circle
+                      cx="64"
+                      cy="64"
+                      r="58.4"
+                      fill="none"
+                      stroke="url(#performanceOrangeGrad)"
+                      strokeWidth="11.2"
+                      strokeDasharray="366.94"
+                      strokeDashoffset={strokeOffset.toFixed(2)}
+                      strokeLinecap="round"
+                      transform="rotate(-90 64 64)"
+                      className="transition-opacity duration-300"
+                      style={{
+                        opacity: currentVal >= 50 && currentVal < 90 ? 1 : 0,
+                        willChange: "stroke-dashoffset, opacity",
+                      }}
+                    />
+
+                    {/* Active Green ring (90-100) */}
+                    <circle
+                      cx="64"
+                      cy="64"
+                      r="58.4"
+                      fill="none"
+                      stroke="url(#performanceGreenGrad)"
+                      strokeWidth="11.2"
+                      strokeDasharray="366.94"
+                      strokeDashoffset={strokeOffset.toFixed(2)}
+                      strokeLinecap="round"
+                      transform="rotate(-90 64 64)"
+                      className="transition-opacity duration-300"
+                      style={{
+                        opacity: currentVal >= 90 ? 1 : 0,
+                        willChange: "stroke-dashoffset, opacity",
+                      }}
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span className="text-4xl text-green-4 font-semibold tabular-nums">
-                      100
+                    <span
+                      className={`text-4xl font-semibold tabular-nums tracking-tight transition-all duration-300 ${numberColor} ${
+                        currentVal === 100 ? "scale-105" : "scale-100"
+                      }`}
+                    >
+                      {currentVal}
                     </span>
                   </div>
                 </div>
               </div>
+
               <span className="text-xl font-medium text-green-4 flex items-center gap-2">
-                <span className="size-2 rounded-full bg-green-4 animate-pulse"></span>
+                <span
+                  className={`size-2 rounded-full transition-colors duration-300 ${dotColor} ${
+                    currentVal === 100 ? "animate-pulse" : ""
+                  }`}
+                ></span>
                 100% Automated
               </span>
               <p className="text-sm text-fg-3 text-center text-balance max-w-64">
                 100% of comments responded to instantly. Never miss an interested customer.
               </p>
-              <div className="flex items-center gap-4 text-sm text-fg-4 font-medium">
-                <span className="flex items-center gap-1.5 opacity-40">
+              <div className="flex items-center gap-4 text-sm font-medium">
+                <span
+                  className={`flex items-center gap-1.5 transition-all duration-300 ${
+                    currentVal < 50
+                      ? "text-red-4 font-semibold opacity-100 scale-105"
+                      : "text-fg-4 opacity-40 scale-100"
+                  }`}
+                >
                   <span className="w-2.5 h-2.5 rounded-full bg-red-4"></span>
                   0-49
                 </span>
-                <span className="flex items-center gap-1.5 opacity-40">
+                <span
+                  className={`flex items-center gap-1.5 transition-all duration-300 ${
+                    currentVal >= 50 && currentVal < 90
+                      ? "text-amber-4 font-semibold opacity-100 scale-105"
+                      : "text-fg-4 opacity-40 scale-100"
+                  }`}
+                >
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-4"></span>
                   50-89
                 </span>
-                <span className="flex items-center gap-1.5 text-green-4 font-semibold">
+                <span
+                  className={`flex items-center gap-1.5 transition-all duration-300 ${
+                    currentVal >= 90
+                      ? "text-green-4 font-semibold opacity-100 scale-105"
+                      : "text-fg-4 opacity-40 scale-100"
+                  }`}
+                >
                   <span className="w-2.5 h-2.5 rounded-full bg-green-4"></span>
-                  90+
+                  100+
                 </span>
               </div>
             </div>

@@ -1,10 +1,72 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import ValueProps from "./ValueProps";
 import CustomerMarquee from "./CustomerMarquee";
+
+interface Spring {
+  x: number;
+  v: number;
+  target: number;
+  settled: boolean;
+  to: (newTarget: number) => void;
+  set: (val: number) => void;
+  step: (dt: number) => boolean;
+}
+
+function createSpring(initial: number, tension = 280, friction = 26, mass = 1): Spring {
+  let x = initial;
+  let v = 0;
+  let target = initial;
+  let settled = true;
+
+  return {
+    get x() {
+      return x;
+    },
+    get v() {
+      return v;
+    },
+    get target() {
+      return target;
+    },
+    get settled() {
+      return settled;
+    },
+    to(newTarget: number) {
+      target = newTarget;
+      settled = false;
+    },
+    set(val: number) {
+      x = val;
+      target = val;
+      v = 0;
+      settled = true;
+    },
+    step(dt: number) {
+      if (settled) return true;
+      const clampedDt = Math.min(dt, 0.032);
+      const subSteps = 2;
+      const subDt = clampedDt / subSteps;
+      for (let i = 0; i < subSteps; i++) {
+        const force = -tension * (x - target) - friction * v;
+        const a = force / mass;
+        v += a * subDt;
+        x += v * subDt;
+      }
+
+      if (Math.abs(v) < 0.1 && Math.abs(x - target) < 0.1) {
+        x = target;
+        v = 0;
+        settled = true;
+        return true;
+      }
+      return false;
+    },
+  };
+}
 
 const tabs = [
   { name: "Smart DM", image: "/marketing/dashboard-stats.png", alt: "Befroosh smart direct message automation" },
@@ -16,7 +78,178 @@ const tabs = [
 
 export default function Hero() {
   const [activeTab, setActiveTab] = useState(0);
+  const [hoveredTab, setHoveredTab] = useState<number | null>(null);
+  const [isIndicatorReady, setIsIndicatorReady] = useState(false);
   const shimmerRef = useRef<HTMLSpanElement>(null);
+
+  const tabsContainerRef = useRef<HTMLDivElement | null>(null);
+  const blobRef = useRef<HTMLDivElement | null>(null);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const springsRef = useRef<{ L: Spring; R: Spring }>({
+    L: createSpring(0),
+    R: createSpring(0),
+  });
+
+  const fromIndexRef = useRef<number>(0);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const leaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const lastTimeRef = useRef<number | null>(null);
+
+  const runLoop = useCallback((time: number) => {
+    if (lastTimeRef.current === null) {
+      lastTimeRef.current = time;
+    }
+    const dt = (time - lastTimeRef.current) / 1000;
+    lastTimeRef.current = time;
+
+    const { L, R } = springsRef.current;
+    const settledL = L.step(dt);
+    const settledR = R.step(dt);
+
+    if (blobRef.current) {
+      const minX = Math.max(0, Math.min(L.x, R.x));
+      const maxX = Math.max(minX + 34, Math.max(L.x, R.x));
+      const width = maxX - minX;
+      blobRef.current.style.transform = `translateX(${minX}px)`;
+      blobRef.current.style.width = `${width}px`;
+    }
+
+    if (!settledL || !settledR) {
+      rafRef.current = requestAnimationFrame(runLoop);
+    } else {
+      rafRef.current = null;
+      lastTimeRef.current = null;
+    }
+  }, []);
+
+  const startLoop = useCallback(() => {
+    if (!rafRef.current) {
+      lastTimeRef.current = null;
+      rafRef.current = requestAnimationFrame(runLoop);
+    }
+  }, [runLoop]);
+
+  const moveToTab = useCallback(
+    (targetIndex: number, immediate = false) => {
+      const targetEl = tabRefs.current[targetIndex];
+      if (!targetEl || !tabsContainerRef.current) return;
+
+      const targetLeft = targetEl.offsetLeft;
+      const targetRight = targetLeft + targetEl.offsetWidth;
+
+      const fromIndex = fromIndexRef.current;
+      if (fromIndex === targetIndex && !immediate) return;
+
+      fromIndexRef.current = targetIndex;
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+
+      const prefersReduced =
+        typeof window !== "undefined" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      if (immediate || prefersReduced || fromIndex === -1) {
+        springsRef.current.L.set(targetLeft);
+        springsRef.current.R.set(targetRight);
+        if (blobRef.current) {
+          const width = Math.max(34, targetRight - targetLeft);
+          blobRef.current.style.transform = `translateX(${targetLeft}px)`;
+          blobRef.current.style.width = `${width}px`;
+        }
+        return;
+      }
+
+      if (targetIndex > fromIndex) {
+        // Moving right: right edge stretches first, left edge follows after 80ms
+        springsRef.current.R.to(targetRight);
+        startLoop();
+        timeoutRef.current = setTimeout(() => {
+          springsRef.current.L.to(targetLeft);
+          startLoop();
+          timeoutRef.current = null;
+        }, 80);
+      } else {
+        // Moving left: left edge stretches back first, right edge follows after 80ms
+        springsRef.current.L.to(targetLeft);
+        startLoop();
+        timeoutRef.current = setTimeout(() => {
+          springsRef.current.R.to(targetRight);
+          startLoop();
+          timeoutRef.current = null;
+        }, 80);
+      }
+    },
+    [startLoop]
+  );
+
+  const activeTabRef = useRef(activeTab);
+  activeTabRef.current = activeTab;
+  const hoveredTabRef = useRef(hoveredTab);
+  hoveredTabRef.current = hoveredTab;
+  const prevActiveTabRef = useRef(activeTab);
+
+  const handleTabMouseEnter = useCallback(
+    (index: number) => {
+      if (leaveTimeoutRef.current) {
+        clearTimeout(leaveTimeoutRef.current);
+        leaveTimeoutRef.current = null;
+      }
+      setHoveredTab(index);
+      moveToTab(index);
+    },
+    [moveToTab]
+  );
+
+  const handleTabsMouseLeave = useCallback(() => {
+    if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current);
+    leaveTimeoutRef.current = setTimeout(() => {
+      setHoveredTab(null);
+      moveToTab(activeTabRef.current);
+    }, 70);
+  }, [moveToTab]);
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (leaveTimeoutRef.current) {
+        clearTimeout(leaveTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsIndicatorReady(true);
+      moveToTab(activeTabRef.current, true);
+    }, 60);
+
+    const handleResize = () => {
+      moveToTab(hoveredTabRef.current ?? activeTabRef.current, true);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [moveToTab]);
+
+  useEffect(() => {
+    if (prevActiveTabRef.current !== activeTab) {
+      prevActiveTabRef.current = activeTab;
+      moveToTab(activeTab);
+    }
+  }, [activeTab, moveToTab]);
 
   useEffect(() => {
     let animId: number;
@@ -205,26 +438,53 @@ export default function Hero() {
             }}
           />
 
-          {/* Desktop Tabs */}
-          <div className="hidden md:contents">
+          {/* Desktop Tabs Container */}
+          <div
+            ref={tabsContainerRef}
+            style={{ position: "relative" }}
+            className="relative hidden md:flex items-center h-9"
+            onMouseLeave={handleTabsMouseLeave}
+          >
+            {/* Liquid Glass moving indicator */}
+            <div
+              ref={blobRef}
+              aria-hidden="true"
+              className="pointer-events-none absolute z-0 top-0 left-0 rounded-xl transition-opacity duration-150"
+              style={{
+                height: "36px",
+                border: "1px solid rgba(145, 141, 246, 0.32)",
+                background:
+                  "linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(238, 235, 255, 0.68) 100%)",
+                boxShadow:
+                  "0 3px 12px -2px rgba(145, 141, 246, 0.24), 0 1px 3px rgba(0, 0, 0, 0.03), inset 0 1px 0 #ffffff, inset 0 -1px 0 rgba(145, 141, 246, 0.18)",
+                backdropFilter: "blur(14px) saturate(160%)",
+                WebkitBackdropFilter: "blur(14px) saturate(160%)",
+                opacity: isIndicatorReady ? 1 : 0,
+                willChange: "transform, width",
+              }}
+            />
+
             {tabs.map((tab, idx) => {
-              const isActive = activeTab === idx;
+              const isSelected = hoveredTab !== null ? hoveredTab === idx : activeTab === idx;
               return (
                 <button
                   key={tab.name}
+                  ref={(el) => {
+                    tabRefs.current[idx] = el;
+                  }}
                   type="button"
-                  onClick={() => setActiveTab(idx)}
-                  className={`relative text-sm font-medium cursor-pointer transition-colors h-9 px-3 ${
-                    isActive ? "text-fg-4" : "text-fg-2 hover:text-fg-4"
+                  onClick={() => {
+                    setActiveTab(idx);
+                    moveToTab(idx);
+                  }}
+                  onMouseEnter={() => handleTabMouseEnter(idx)}
+                  className={`relative z-10 text-sm cursor-pointer transition-colors duration-150 h-9 px-3 flex items-center justify-center select-none ${
+                    isSelected
+                      ? "text-purple-4 font-semibold"
+                      : "text-fg-2 hover:text-purple-4 font-medium"
                   }`}
                 >
-                  {isActive && (
-                    <span
-                      className="absolute inset-0 rounded-full bg-bg-a2"
-                      style={{ opacity: 1 }}
-                    />
-                  )}
-                  <span className="relative">{tab.name}</span>
+                  <span className="relative select-none pointer-events-none">{tab.name}</span>
                 </button>
               );
             })}
@@ -248,7 +508,7 @@ export default function Hero() {
                 />
               </svg>
             </button>
-            <span className="text-sm font-medium text-center text-fg-4 w-24">
+            <span className="text-sm font-semibold text-center text-purple-4 w-24">
               {tabs[activeTab].name}
             </span>
             <button
